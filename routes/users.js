@@ -65,4 +65,8 @@ router.post("/login", validation(schemas.login), async (req, res) => {
   }
 });
 
+router.get("/", (req, res) => {
+  res.status(200).send("Working");
+});
+
 module.exports = router;
