@@ -35,7 +35,6 @@ const schemas = {
       .required(),
     amount: Joi.number().required(),
     date: Joi.date().required(),
-    // user: Joi.objectId().required(),
     category: Joi.objectId().required()
   })
 };

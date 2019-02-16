@@ -11,14 +11,14 @@ module.exports = function(app) {
     res.header(
       "Access-Control-Allow-Methods",
       "GET, POST, PUT, DELETE, OPTIONS"
-    ); //Method PUT is not allowed by Access-Control-Allow-Methods in preflight response.
+    );
 
     res.header(
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token"
-    ); //request'de gönderebilmek için
+    );
 
-    res.header("Access-Control-Expose-Headers", "x-auth-token"); //response'da gönderebilmek için
+    res.header("Access-Control-Expose-Headers", "x-auth-token");
 
     next();
   });

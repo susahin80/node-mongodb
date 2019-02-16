@@ -1,9 +1,10 @@
 const MongoClient = require("mongodb").MongoClient;
 const express = require("express");
 const app = express();
+require("dotenv").config();
 
-const dbName = "perfdb";
 const dbUrl = process.env.MONGO_URL;
+const dbName = process.env.MONGO_DB;
 
 MongoClient.connect(dbUrl, { useNewUrlParser: true }, (err, client) => {
   if (err) throw err;
