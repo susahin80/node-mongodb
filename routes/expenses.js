@@ -107,9 +107,6 @@ router.get("/", auth, async (req, res) => {
         { $unwind: "$Category" },
         {
           $project: {
-            //category: 0,
-            //user: 0,
-            //"Category._id": 0,
             name: 1,
             amount: 1,
             date: 1,
