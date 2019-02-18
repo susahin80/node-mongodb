@@ -49,6 +49,7 @@ router.post("/", [auth, validation(schemas.expense)], async (req, res) => {
 
     expense.date = new Date(expense.date);
     expense.user = req.user.userId;
+    expense.category = new ObjectID(expense.category);
 
     const db = req.app.locals.db;
     const result = await db.collection("expenses").insertOne(expense);
@@ -90,7 +91,39 @@ router.get("/", auth, async (req, res) => {
 
     const expenses = await db
       .collection("expenses")
-      .find({ user: req.user.userId })
+
+      .aggregate([
+        {
+          $match: { user: new ObjectID(req.user.userId) }
+        },
+        {
+          $lookup: {
+            from: "expenseCategories",
+            localField: "category",
+            foreignField: "_id",
+            as: "Category"
+          }
+        },
+        { $unwind: "$Category" },
+        {
+          $project: {
+            //category: 0,
+            //user: 0,
+            //"Category._id": 0,
+            name: 1,
+            amount: 1,
+            date: 1,
+            Category: 1,
+            CategoryName: "$Category.name"
+          }
+        },
+        {
+          $project: {
+            Category: 0,
+            user: 0
+          }
+        }
+      ])
       .sort(sort)
       .skip(skip)
       .limit(size)
@@ -102,18 +135,35 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+
+    const expense = await db.collection("expenses").findOne({
+      _id: new ObjectID(req.params.id),
+      user: req.user.userId
+    });
+
+    if (!expense) return res.status(404).send("Not found");
+
+    res.status(200).send(expense);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 router.delete("/:id", auth, async (req, res) => {
   try {
     const db = req.app.locals.db;
 
     let expense = await db
       .collection("expenses")
-      .findOne({ _id: new ObjectID(req.params.id) });
+      .findOne({ _id: new ObjectID(req.params.id), user: req.user.userId });
 
     if (!expense) return res.status(400).send("Expense not found"); //400-bad request
 
-    if (req.user.userId !== expense.user.toString())
-      return res.status(403).send("Expense is not yours"); //403-forbidden
+    // if (req.user.userId !== expense.user.toString())
+    //   return res.status(403).send("Expense is not yours"); //403-forbidden
 
     expense = await db
       .collection("expenses")
@@ -131,12 +181,12 @@ router.put("/:id", [auth, validation(schemas.expense)], async (req, res) => {
 
     let expense = await db
       .collection("expenses")
-      .findOne({ _id: new ObjectID(req.params.id) });
+      .findOne({ _id: new ObjectID(req.params.id), user: req.user.userId });
 
     if (!expense) return res.status(400).send("Expense not found"); //400-bad request
 
-    if (req.user.userId !== expense.user.toString())
-      return res.status(403).send("Expense is not yours"); //403-forbidden
+    // if (req.user.userId !== expense.user.toString())
+    //   return res.status(403).send("Expense is not yours"); //403-forbidden
 
     const result = await db.collection("expenses").findOneAndUpdate(
       { _id: new ObjectID(req.params.id) },
