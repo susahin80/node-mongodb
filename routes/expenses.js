@@ -91,7 +91,6 @@ router.get("/", auth, async (req, res) => {
 
     const expenses = await db
       .collection("expenses")
-
       .aggregate([
         {
           $match: { user: new ObjectID(req.user.userId) }
@@ -136,14 +135,45 @@ router.get("/:id", auth, async (req, res) => {
   try {
     const db = req.app.locals.db;
 
-    const expense = await db.collection("expenses").findOne({
-      _id: new ObjectID(req.params.id),
-      user: req.user.userId
-    });
+    const expense = await db
+      .collection("expenses")
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectID(req.params.id),
+            user: new ObjectID(req.user.userId)
+          }
+        },
+        {
+          $lookup: {
+            from: "expenseCategories",
+            localField: "category",
+            foreignField: "_id",
+            as: "Category"
+          }
+        },
+        { $unwind: "$Category" },
+        {
+          $project: {
+            name: 1,
+            amount: 1,
+            date: 1,
+            Category: 1,
+            ExpenseCategory: "$Category"
+          }
+        },
+        {
+          $project: {
+            Category: 0,
+            user: 0
+          }
+        }
+      ])
+      .toArray();
 
-    if (!expense) return res.status(404).send("Not found");
+    if (expense.length == 0) return res.status(404).send("Not found");
 
-    res.status(200).send(expense);
+    res.status(200).send(expense[0]);
   } catch (err) {
     res.status(500).send(err.message);
   }
