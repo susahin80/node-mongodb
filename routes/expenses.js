@@ -158,7 +158,7 @@ router.get("/:id", auth, async (req, res) => {
             name: 1,
             amount: 1,
             date: 1,
-            categoryId: "$category._id"
+            category: "$category._id"
           }
         },
         {
