@@ -149,22 +149,20 @@ router.get("/:id", auth, async (req, res) => {
             from: "expenseCategories",
             localField: "category",
             foreignField: "_id",
-            as: "Category"
+            as: "category"
           }
         },
-        { $unwind: "$Category" },
+        { $unwind: "$category" },
         {
           $project: {
             name: 1,
             amount: 1,
             date: 1,
-            Category: 1,
-            ExpenseCategory: "$Category"
+            categoryId: "$category._id"
           }
         },
         {
           $project: {
-            Category: 0,
             user: 0
           }
         }
