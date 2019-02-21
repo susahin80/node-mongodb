@@ -48,7 +48,7 @@ router.post("/", [auth, validation(schemas.expense)], async (req, res) => {
     let expense = _.pick(req.body, ["name", "amount", "date", "category"]);
 
     expense.date = new Date(expense.date);
-    expense.user = req.user.userId;
+    expense.user = new ObjectID(req.user.userId);
     expense.category = new ObjectID(expense.category);
 
     const db = req.app.locals.db;
@@ -79,11 +79,11 @@ router.post("/", [auth, validation(schemas.expense)], async (req, res) => {
 
 router.get("/", auth, async (req, res) => {
   try {
-    const page = req.query.page ? +req.query.page : 1;
+    const page = req.query.page ? +req.query.page : 0;
     const size = req.query.size ? +req.query.size : 5;
     const sortQuery = req.query.sort ? req.query.sort : "date";
 
-    const skip = (page - 1) * size;
+    const skip = page * size;
     var sort = {};
     sort[sortQuery] = 1;
 
@@ -125,7 +125,12 @@ router.get("/", auth, async (req, res) => {
       .limit(size)
       .toArray();
 
-    res.status(200).send(expenses);
+    const totalRecords = await db
+      .collection("expenses")
+      .find({ user: new ObjectID(req.user.userId) })
+      .count();
+
+    res.status(200).send({ expenses, totalRecords });
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -204,9 +209,12 @@ router.put("/:id", [auth, validation(schemas.expense)], async (req, res) => {
   try {
     const db = req.app.locals.db;
 
-    let expense = await db
-      .collection("expenses")
-      .findOne({ _id: new ObjectID(req.params.id), user: req.user.userId });
+    let expense = await db.collection("expenses").findOne({
+      _id: new ObjectID(req.params.id),
+      user: new ObjectID(req.user.userId)
+    });
+
+    console.log(expense);
 
     if (!expense) return res.status(400).send("Expense not found"); //400-bad request
 
@@ -220,7 +228,7 @@ router.put("/:id", [auth, validation(schemas.expense)], async (req, res) => {
           name: req.body.name,
           amount: req.body.amount,
           date: new Date(req.body.date),
-          category: req.body.category
+          category: new ObjectID(req.body.category)
         }
       }
     );
