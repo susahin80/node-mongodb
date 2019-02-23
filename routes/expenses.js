@@ -79,11 +79,11 @@ router.post("/", [auth, validation(schemas.expense)], async (req, res) => {
 
 router.get("/", auth, async (req, res) => {
   try {
-    const page = req.query.page ? +req.query.page : 0;
-    const size = req.query.size ? +req.query.size : 5;
+    // const page = req.query.page ? +req.query.page : 0;
+    // const size = req.query.size ? +req.query.size : 5;
     const sortQuery = req.query.sort ? req.query.sort : "date";
 
-    const skip = page * size;
+    // const skip = page * size;
     var sort = {};
     sort[sortQuery] = 1;
 
@@ -121,16 +121,16 @@ router.get("/", auth, async (req, res) => {
         }
       ])
       .sort(sort)
-      .skip(skip)
-      .limit(size)
+      // .skip(skip)
+      // .limit(size)
       .toArray();
 
-    const totalRecords = await db
-      .collection("expenses")
-      .find({ user: new ObjectID(req.user.userId) })
-      .count();
+    // const totalRecords = await db
+    //   .collection("expenses")
+    //   .find({ user: new ObjectID(req.user.userId) })
+    //   .count();
 
-    res.status(200).send({ expenses, totalRecords });
+    res.status(200).send(expenses);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -188,7 +188,10 @@ router.delete("/:id", auth, async (req, res) => {
 
     let expense = await db
       .collection("expenses")
-      .findOne({ _id: new ObjectID(req.params.id), user: req.user.userId });
+      .findOne({
+        _id: new ObjectID(req.params.id),
+        user: new ObjectID(req.user.userId)
+      });
 
     if (!expense) return res.status(400).send("Expense not found"); //400-bad request
 
